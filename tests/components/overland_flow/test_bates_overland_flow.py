@@ -1,16 +1,25 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for landlab.components.overland_flow.OverlandFlowBates
 
 last updated: 3/14/16
 """
+
 import numpy as np
 import pytest
 
+from landlab import RasterModelGrid
 from landlab.components.overland_flow import OverlandFlowBates
 
 (_SHAPE, _SPACING, _ORIGIN) = ((32, 240), (25, 25), (0.0, 0.0))
 _ARGS = (_SHAPE, _SPACING, _ORIGIN)
+
+
+@pytest.fixture
+def bates():
+    grid = RasterModelGrid((32, 240), xy_spacing=25)
+    grid.add_zeros("surface_water__depth", at="node")
+    grid.add_zeros("topographic__elevation", at="node")
+    return OverlandFlowBates(grid, mannings_n=0.01, h_init=0.001)
 
 
 def test_Bates_name(bates):
@@ -18,15 +27,17 @@ def test_Bates_name(bates):
 
 
 def test_Bates_input_var_names(bates):
-    assert set(bates.input_var_names) == set(
-        ("surface_water__depth", "topographic__elevation")
-    )
+    assert set(bates.input_var_names) == {
+        "surface_water__depth",
+        "topographic__elevation",
+    }
 
 
 def test_Bates_output_var_names(bates):
-    assert set(bates.output_var_names) == set(
-        ("surface_water__depth", "surface_water__discharge")
-    )
+    assert set(bates.output_var_names) == {
+        "surface_water__depth",
+        "surface_water__discharge",
+    }
 
 
 def test_Bates_var_units(bates):
@@ -67,12 +78,12 @@ def test_Bates_analytical():
     bates.dt = 1.0
     while time < 500:
         bates.overland_flow(grid)
-        h_boundary = ((7.0 / 3.0) * (0.01 ** 2) * (0.4 ** 3) * time) ** (3.0 / 7.0)
+        h_boundary = ((7.0 / 3.0) * (0.01**2) * (0.4**3) * time) ** (3.0 / 7.0)
         grid.at_node["surface_water__depth"][grid.nodes[1:-1, 1]] = h_boundary
         time += bates.dt
 
     x = np.arange(0, ((grid.shape[1]) * grid.dx), grid.dx)
-    h_analytical = -(7.0 / 3.0) * (0.01 ** 2) * (0.4 ** 2) * (x - (0.4 * 500))
+    h_analytical = -(7.0 / 3.0) * (0.01**2) * (0.4**2) * (x - (0.4 * 500))
 
     h_analytical[np.where(h_analytical > 0)] = h_analytical[
         np.where(h_analytical > 0)

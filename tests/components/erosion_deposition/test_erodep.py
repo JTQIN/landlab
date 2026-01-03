@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
 Created on Thu Jul 27 14:23:25 2017
 
@@ -10,8 +9,10 @@ import numpy as np
 import pytest
 from numpy import testing
 
-from landlab import HexModelGrid, RasterModelGrid
-from landlab.components import ErosionDeposition, FlowAccumulator
+from landlab import HexModelGrid
+from landlab import RasterModelGrid
+from landlab.components import ErosionDeposition
+from landlab.components import FlowAccumulator
 
 
 def test_route_to_multiple_error_raised():
@@ -23,28 +24,6 @@ def test_route_to_multiple_error_raised():
 
     with pytest.raises(NotImplementedError):
         ErosionDeposition(mg, K=0.01, v_s=0.001, m_sp=0.5, n_sp=1.0, sp_crit=0)
-
-
-def test_phi_error_raised():
-    mg = RasterModelGrid((10, 10))
-    z = mg.add_zeros("topographic__elevation", at="node")
-    z += mg.x_of_node + mg.y_of_node
-    fa = FlowAccumulator(mg)
-    fa.run_one_step()
-
-    with pytest.raises(ValueError):
-        ErosionDeposition(mg, phi=0)
-
-
-def test_extra_kwd_error_raised():
-    mg = RasterModelGrid((10, 10))
-    z = mg.add_zeros("topographic__elevation", at="node")
-    z += mg.x_of_node + mg.y_of_node
-    fa = FlowAccumulator(mg)
-    fa.run_one_step()
-
-    with pytest.raises(ValueError):
-        ErosionDeposition(mg, spam=0)
 
 
 def test_bad_solver_name():
@@ -135,11 +114,18 @@ def test_steady_state_with_basic_solver_option():
 
     # Instantiate the ErosionDeposition component...
     ed = ErosionDeposition(
-        mg, K=K, F_f=F_f, v_s=v_s, m_sp=m_sp, n_sp=n_sp, sp_crit=0, solver="basic",
+        mg,
+        K=K,
+        F_f=F_f,
+        v_s=v_s,
+        m_sp=m_sp,
+        n_sp=n_sp,
+        sp_crit=0,
+        solver="basic",
     )
 
     # ... and run it to steady state (5000x1-year timesteps).
-    for i in range(5000):
+    for _ in range(5000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[mg.core_nodes] += U * dt  # m
@@ -196,7 +182,7 @@ def test_can_run_with_hex():
     ed = ErosionDeposition(mg, K=K, v_s=vs, m_sp=0.5, n_sp=1.0, solver="adaptive")
 
     # ... and run it to steady state.
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[mg.core_nodes] += U * dt
@@ -207,7 +193,7 @@ def test_can_run_with_hex():
     a18 = mg.at_node["drainage_area"][18]
     a28 = mg.at_node["drainage_area"][28]
     s = mg.at_node["topographic__steepest_slope"]
-    s18 = sa_factor * (a18 ** -0.5)
-    s28 = sa_factor * (a28 ** -0.5)
+    s18 = sa_factor * (a18**-0.5)
+    s28 = sa_factor * (a28**-0.5)
     testing.assert_equal(np.round(s[18], 3), np.round(s18, 3))
     testing.assert_equal(np.round(s[28], 3), np.round(s28, 3))

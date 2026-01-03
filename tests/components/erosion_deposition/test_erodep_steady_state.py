@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
 Created on Thu Jul 27 14:23:25 2017
 
@@ -10,7 +9,8 @@ import numpy as np
 from numpy.testing import assert_equal
 
 from landlab import RasterModelGrid
-from landlab.components import ErosionDeposition, FlowAccumulator
+from landlab.components import ErosionDeposition
+from landlab.components import FlowAccumulator
 
 
 def test_erodep_slope_area_small_vs():
@@ -34,7 +34,7 @@ def test_erodep_slope_area_small_vs():
     ed = ErosionDeposition(rg, K=K, v_s=vs, m_sp=0.5, n_sp=1.0, solver="adaptive")
 
     # ... and run it to steady state.
-    for i in range(1000):
+    for _ in range(1000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[rg.core_nodes] += U * dt
@@ -45,8 +45,8 @@ def test_erodep_slope_area_small_vs():
     a11 = 2.0
     a12 = 1.0
     s = rg.at_node["topographic__steepest_slope"]
-    s11 = sa_factor * (a11 ** -0.5)
-    s12 = sa_factor * (a12 ** -0.5)
+    s11 = sa_factor * (a11**-0.5)
+    s12 = sa_factor * (a12**-0.5)
     assert_equal(np.round(s[11], 3), np.round(s11, 3))
     assert_equal(np.round(s[12], 3), np.round(s12, 3))
 
@@ -72,7 +72,7 @@ def test_erodep_slope_area_big_vs():
     ed = ErosionDeposition(rg, K=K, v_s=vs, m_sp=0.5, n_sp=1.0, solver="adaptive")
 
     # ... and run it to steady state.
-    for i in range(1000):
+    for _ in range(1000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[rg.core_nodes] += U * dt
@@ -82,8 +82,8 @@ def test_erodep_slope_area_big_vs():
     sa_factor = (1.0 + vs) * U / K
     a11 = 2.0
     a12 = 1.0
-    s11 = sa_factor * (a11 ** -0.5)
-    s12 = sa_factor * (a12 ** -0.5)
+    s11 = sa_factor * (a11**-0.5)
+    s12 = sa_factor * (a12**-0.5)
     assert_equal(np.round(s[11], 2), np.round(s11, 2))
     assert_equal(np.round(s[12], 2), np.round(s12, 2))
 
@@ -109,7 +109,7 @@ def test_erodep_slope_area_with_vs_unity():
     ed = ErosionDeposition(rg, K=K, v_s=vs, m_sp=0.5, n_sp=1.0, solver="adaptive")
 
     # ... and run it to steady state.
-    for i in range(1000):
+    for _ in range(1000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[rg.core_nodes] += U * dt
@@ -119,8 +119,8 @@ def test_erodep_slope_area_with_vs_unity():
     sa_factor = (1.0 + vs) * U / K
     a11 = 2.0
     a12 = 1.0
-    s11 = sa_factor * (a11 ** -0.5)
-    s12 = sa_factor * (a12 ** -0.5)
+    s11 = sa_factor * (a11**-0.5)
+    s12 = sa_factor * (a12**-0.5)
     assert_equal(np.round(s[11], 2), np.round(s11, 2))
     assert_equal(np.round(s[12], 2), np.round(s12, 2))
 
@@ -148,7 +148,7 @@ def test_erodep_slope_area_shear_stress_scaling():
     ed = ErosionDeposition(rg, K=K, v_s=vs, m_sp=m_sp, n_sp=n_sp, solver="adaptive")
 
     # ... and run it to steady state.
-    for i in range(1500):
+    for _ in range(1500):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[rg.core_nodes] += U * dt
@@ -188,7 +188,7 @@ def test_erodep_slope_area_with_threshold():
     )
 
     # ... and run it to steady state.
-    for i in range(1000):
+    for _ in range(1000):
         fa.run_one_step()
         ed.run_one_step(dt=dt)
         z[rg.core_nodes] += U * dt
@@ -198,7 +198,7 @@ def test_erodep_slope_area_with_threshold():
     sa_factor = ((1.0 + vs) * U + wc) / K  # approximate sol'n
     a11 = 2.0
     a12 = 1.0
-    s11 = sa_factor * (a11 ** -0.5)
-    s12 = sa_factor * (a12 ** -0.5)
+    s11 = sa_factor * (a11**-0.5)
+    s12 = sa_factor * (a12**-0.5)
     assert_equal(np.round(s[11], 2), np.round(s11, 2))
     assert_equal(np.round(s[12], 2), np.round(s12, 2))

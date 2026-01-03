@@ -2,8 +2,10 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from landlab import RasterModelGrid, VoronoiDelaunayGrid
-from landlab.components import FlowAccumulator, FlowDirectorDINF
+from landlab import RasterModelGrid
+from landlab import VoronoiDelaunayGrid
+from landlab.components import FlowAccumulator
+from landlab.components import FlowDirectorDINF
 from landlab.components.flow_director import flow_direction_dinf
 
 
@@ -247,7 +249,7 @@ def test_D_infinity_SW_slope():
 def test_D_infinity_WSW_slope():
     mg = RasterModelGrid((10, 10))
     mg.add_field(
-        "topographic__elevation", mg.node_y * (2 ** 0.5 - 1.0) + mg.node_x, at="node"
+        "topographic__elevation", mg.node_y * (2**0.5 - 1.0) + mg.node_x, at="node"
     )
     fa = FlowAccumulator(mg, flow_director="FlowDirectorDINF")
     fa.run_one_step()

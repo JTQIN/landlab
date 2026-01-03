@@ -1,112 +1,53 @@
 #! /usr/bin/env python
-
 import os
-import re
-from distutils.extension import Extension
+import sys
 
-import pkg_resources
-from setuptools import Extension, find_packages, setup
-from setuptools.command.develop import develop
-from setuptools.command.install import install
+import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension
+from setuptools import setup
+from setuptools.command.build_ext import build_ext
 
-import versioneer
-
-numpy_incl = pkg_resources.resource_filename("numpy", "core/include")
-
-
-def find_extensions(path="."):
-    extensions = []
-    for root, dirs, files in os.walk(os.path.normpath(path)):
-        extensions += [
-            os.path.join(root, fname) for fname in files if fname.endswith(".pyx")
-        ]
-    return [
-        Extension(re.sub(re.escape(os.path.sep), ".", ext[: -len(".pyx")]), [ext])
-        for ext in extensions
-    ]
+if os.environ.get("LANDLAB_BUILD_RELEASE", "0") == "1":
+    extra_compile_args = ["-O3"] if sys.platform != "win32" else ["/O2"]
+else:
+    extra_compile_args = ["-O0"] if sys.platform != "win32" else ["/Od"]
 
 
-def register(**kwds):
-    import httplib, urllib
-
-    data = urllib.urlencode(kwds)
-    header = {
-        "Content-type": "application/x-www-form-urlencoded",
-        "Accept": "text/plain",
-    }
-    conn = httplib.HTTPConnection("csdms.colorado.edu")
-    conn.request("POST", "/register/", data, header)
-
-
-def register_landlab():
+def _build_cpu_count():
     try:
-        from sys import argv
-        import platform
-
-        data = {
-            "name": "landlab",
-            "version": __version__,
-            "platform": platform.platform(),
-            "desc": ";".join(argv),
-        }
-        register(**data)
-    except Exception:
-        pass
+        return int(os.environ["LANDLAB_BUILD_CPU_COUNT"])
+    except KeyError:
+        return os.cpu_count() or 1
 
 
-class install_and_register(install):
-    def run(self):
-        install.run(self)
-        register_landlab()
+with open("cython-files.txt") as fp:
+    cython_files = {fname.strip() for fname in fp.readlines()}
+
+ext_modules = cythonize(
+    [
+        Extension(
+            path[4:-4].replace("/", "."),
+            [path],
+            define_macros=[("NPY_NO_DEPRECATED_API", "1")],
+            extra_compile_args=extra_compile_args,
+        )
+        for path in cython_files
+    ],
+    compiler_directives={"embedsignature": True, "language_level": 3},
+    nthreads=_build_cpu_count(),
+)
 
 
-class develop_and_register(develop):
-    def run(self):
-        develop.run(self)
-        register_landlab()
+class build_ext_parallel(build_ext):
+    def finalize_options(self):
+        super().finalize_options()
+        if self.parallel is None:
+            self.parallel = _build_cpu_count()
 
 
 setup(
-    name="landlab",
-    version=versioneer.get_version(),
-    author="Eric Hutton",
-    author_email="eric.hutton@colorado.edu",
-    url="https://github.com/landlab",
-    description="Plugin-based component modeling tool.",
-    long_description=open("README.rst").read(),
-    python_requires=">=3.6",
-    setup_requires=["cython", "numpy"],
-    install_requires=open("requirements.txt", "r").read().splitlines(),
-    include_package_data=True,
-    classifiers=[
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Cython",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Topic :: Scientific/Engineering :: Physics",
-    ],
-    packages=find_packages(),
-    package_data={
-        "": [
-            "tests/*txt",
-            "data/*asc",
-            "data/*nc",
-            "data/*shp",
-            "test/*shx",
-            "data/*dbf",
-            "preciptest.in",
-            "test_*/*nc",
-            "test_*/*asc",
-        ]
-    },
-    cmdclass=versioneer.get_cmdclass(
-        {"install": install_and_register, "develop": develop_and_register}
-    ),
-    entry_points={"console_scripts": ["landlab=landlab.cmd.landlab:main"]},
-    include_dirs=[numpy_incl],
-    ext_modules=find_extensions("landlab"),
+    include_dirs=[np.get_include()],
+    ext_modules=ext_modules,
+    cmdclass={"build_ext": build_ext_parallel},
 )

@@ -1,11 +1,11 @@
 import numpy as np
-from pytest import approx, raises
+from pytest import approx
+from pytest import raises
 
 from landlab import RasterModelGrid
 
 
 class TestPatchesAtNode:
-
     patch_values = np.array(
         [
             [0, -1, -1, -1],
@@ -144,7 +144,7 @@ def test_links_at_patch():
                 [12, 15, 11, 8],
                 [13, 16, 12, 9],
             ],
-            dtype=np.int,
+            dtype=int,
         )
     )
 

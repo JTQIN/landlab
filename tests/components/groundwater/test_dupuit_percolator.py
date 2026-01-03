@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Tue Jun  4 16:26:31 2019
 
@@ -7,10 +6,13 @@ Created on Tue Jun  4 16:26:31 2019
 """
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_almost_equal
+from numpy.testing import assert_equal
 
-from landlab import HexModelGrid, RasterModelGrid
-from landlab.components import FlowAccumulator, GroundwaterDupuitPercolator
+from landlab import HexModelGrid
+from landlab import RasterModelGrid
+from landlab.components import FlowAccumulator
+from landlab.components import GroundwaterDupuitPercolator
 from landlab.grid.mappers import map_mean_of_link_nodes_to_link
 
 
@@ -42,14 +44,14 @@ def test_simple_water_table():
     gdp = GroundwaterDupuitPercolator(
         rg, recharge_rate=1.0e-8, hydraulic_conductivity=0.01
     )
-    for i in range(100):
+    for _ in range(100):
         gdp.run_one_step(1e3)
 
     assert_equal(np.round(gdp._thickness[4], 5), 0.001)
 
 
 def test_simple_surface_leakage():
-    """ test a one-node steady simulation for surface leakage.
+    """test a one-node steady simulation for surface leakage.
 
     Notes
     ----
@@ -64,7 +66,7 @@ def test_simple_surface_leakage():
     grid.add_ones("topographic__elevation", at="node")
     gdp = GroundwaterDupuitPercolator(grid, recharge_rate=1.0e-6)
 
-    for i in range(1000):
+    for _ in range(1000):
         gdp.run_one_step(1e3)
 
     assert_almost_equal(gdp._qs[4], 1e-6)
@@ -85,17 +87,21 @@ def test_simple_water_table_adaptive_dt():
     rg = RasterModelGrid((3, 3), bc=boundaries)
     rg.add_zeros("aquifer_base__elevation", at="node")
     rg.add_ones("topographic__elevation", at="node")
+    rg.add_zeros("water_table__elevation", at="node")
+    rg.at_node["water_table__elevation"][rg.core_nodes] += 1e-10
     gdp = GroundwaterDupuitPercolator(
-        rg, recharge_rate=1.0e-8, hydraulic_conductivity=0.01, courant_coefficient=0.01
+        rg,
+        recharge_rate=1.0e-8,
+        hydraulic_conductivity=0.01,
     )
-    for i in range(10):
+    for _ in range(10):
         gdp.run_with_adaptive_time_step_solver(1e4)
 
     assert_equal(np.round(gdp._thickness[4], 5), 0.001)
 
 
 def test_conservation_of_mass_adaptive_dt():
-    """ test conservation of mass in a sloping aquifer.
+    """test conservation of mass in a sloping aquifer.
 
     Notes
     ----
@@ -131,7 +137,7 @@ def test_conservation_of_mass_adaptive_dt():
     storage_0 = gdp.calc_total_storage()
 
     dt = 1e4
-    for i in range(500):
+    for _ in range(500):
         gdp.run_with_adaptive_time_step_solver(dt)
         fa.run_one_step()
 
@@ -146,7 +152,7 @@ def test_conservation_of_mass_adaptive_dt():
 
 
 def test_symmetry_of_solution():
-    """ test that water table is symmetric under constant recharge
+    """test that water table is symmetric under constant recharge
 
     Notes:
     ----
@@ -170,7 +176,7 @@ def test_symmetry_of_solution():
     gdp = GroundwaterDupuitPercolator(
         hmg, recharge_rate=1e-7, hydraulic_conductivity=1e-4
     )
-    for i in range(1000):
+    for _ in range(1000):
         gdp.run_one_step(1e3)
 
     tc = hmg.at_node["aquifer__thickness"]
@@ -180,7 +186,7 @@ def test_symmetry_of_solution():
 
 
 def test_wt_above_surface_standard_run_step():
-    """ test that water tables above the topogrpahic elevation are
+    """test that water tables above the topogrpahic elevation are
     set to the topographic elevation.
 
     Notes:
@@ -196,10 +202,9 @@ def test_wt_above_surface_standard_run_step():
 
     grid = RasterModelGrid((3, 3))
     grid.set_closed_boundaries_at_grid_edges(True, True, True, False)
-    elev = grid.add_ones("node", "topographic__elevation")
-    wt = grid.add_zeros("node", "water_table__elevation")
+    wt = grid.add_ones("water_table__elevation", at="node")
+    _ = grid.add_ones("topographic__elevation", at="node")
     _ = grid.add_zeros("aquifer_base__elevation", at="node")
-    wt[:] = elev + 1
 
     # initialize the groundwater model
     gdp = GroundwaterDupuitPercolator(grid, recharge_rate=0.0)
@@ -210,11 +215,9 @@ def test_wt_above_surface_standard_run_step():
 def test_wt_above_surface_adaptive_run_step():
     grid = RasterModelGrid((3, 3))
     grid.set_closed_boundaries_at_grid_edges(True, True, True, False)
-    elev = grid.add_ones("node", "topographic__elevation")
-    wt = grid.add_zeros("node", "water_table__elevation")
+    wt = grid.add_ones("water_table__elevation", at="node")
+    _ = grid.add_ones("topographic__elevation", at="node")
     _ = grid.add_zeros("aquifer_base__elevation", at="node")
-
-    wt[:] = elev + 1
 
     # initialize the groundwater model
     gdp = GroundwaterDupuitPercolator(grid, recharge_rate=0.0)
@@ -223,7 +226,6 @@ def test_wt_above_surface_adaptive_run_step():
 
 
 def test_inactive_interior_node():
-
     """
     Test that component returns correct values for recharge flux and
     storage when an interior node is INACTIVE
@@ -238,11 +240,11 @@ def test_inactive_interior_node():
 
     mg = RasterModelGrid((4, 4), xy_spacing=1.0)
     mg.status_at_node[5] = mg.BC_NODE_IS_FIXED_VALUE
-    elev = mg.add_zeros("node", "topographic__elevation")
+    elev = mg.add_zeros("topographic__elevation", at="node")
     elev[:] = 1
-    base = mg.add_zeros("node", "aquifer_base__elevation")
+    base = mg.add_zeros("aquifer_base__elevation", at="node")
     base[:] = 0
-    wt = mg.add_zeros("node", "water_table__elevation")
+    wt = mg.add_zeros("water_table__elevation", at="node")
     wt[:] = 1
 
     gdp = GroundwaterDupuitPercolator(mg)
@@ -265,11 +267,11 @@ def test_k_func():
 
     # initialize model grid
     mg = RasterModelGrid((4, 4), xy_spacing=1.0)
-    elev = mg.add_zeros("node", "topographic__elevation")
+    elev = mg.add_zeros("topographic__elevation", at="node")
     elev[:] = 1
-    base = mg.add_zeros("node", "aquifer_base__elevation")
+    base = mg.add_zeros("aquifer_base__elevation", at="node")
     base[:] = 0
-    wt = mg.add_zeros("node", "water_table__elevation")
+    wt = mg.add_zeros("water_table__elevation", at="node")
     wt[:] = 0.5
 
     # initialize model without giving k_func
@@ -324,8 +326,9 @@ def test_callback_func():
     # externally defined lists
     storage_subdt = []
     subdt = []
+    all_n = []
 
-    def test_fun(grid, dt, n=0.2):
+    def test_fun(grid, recharge, dt, n=0.2):
         cores = grid.core_nodes
         h = grid.at_node["aquifer__thickness"]
         area = grid.cell_area_at_node
@@ -333,6 +336,7 @@ def test_callback_func():
 
         storage_subdt.append(storage)
         subdt.append(dt)
+        all_n.append(n)
 
     # initialize grid
     grid = RasterModelGrid((3, 3))
@@ -345,7 +349,11 @@ def test_callback_func():
 
     # initialize groundwater model
     gdp = GroundwaterDupuitPercolator(
-        grid, recharge_rate=0.0, hydraulic_conductivity=0.0001, callback_fun=test_fun,
+        grid,
+        recharge_rate=0.0,
+        hydraulic_conductivity=0.0001,
+        callback_fun=test_fun,
+        n=0.1,
     )
 
     # run groundawter model
@@ -356,3 +364,5 @@ def test_callback_func():
 
     # assert that substeps sum to the global timestep
     assert_almost_equal(1e5, sum(subdt))
+
+    assert all(x == 0.1 for x in all_n)

@@ -1,22 +1,7 @@
-import numpy as np
-import pytest
-
-from landlab.graph.hex.hex import (
-    HorizontalHexTriGraph,
-    HorizontalRectTriGraph,
-    VerticalHexTriGraph,
-    VerticalRectTriGraph,
-)
-
-
-@pytest.fixture
-def hex_shape():
-    return tuple(np.random.randint(0, 1000, 2))
-
-
-@pytest.fixture
-def small_hex_shape():
-    return tuple(np.random.randint(0, 100, 2))
+from landlab.graph.hex.hex import HorizontalHexTriGraph
+from landlab.graph.hex.hex import HorizontalRectTriGraph
+from landlab.graph.hex.hex import VerticalHexTriGraph
+from landlab.graph.hex.hex import VerticalRectTriGraph
 
 
 def pytest_generate_tests(metafunc):

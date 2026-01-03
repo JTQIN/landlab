@@ -3,11 +3,11 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 
 from landlab import RasterModelGrid
-from landlab.components import FlowAccumulator, StreamPowerSmoothThresholdEroder as Spst
+from landlab.components import FlowAccumulator
+from landlab.components import StreamPowerSmoothThresholdEroder as Spst
 
 
 def test_bad_nsp():
-
     mg = RasterModelGrid((4, 4))
     mg.set_closed_boundaries_at_grid_edges(False, False, True, True)
     with pytest.raises(ValueError):
@@ -29,7 +29,7 @@ def test_no_thresh():
 
     fa = FlowAccumulator(mg)
     sp = Spst(mg, K_sp=K, threshold_sp=threshold)
-    for i in range(100):
+    for _ in range(100):
         fa.run_one_step()
         sp.run_one_step(dt)
         mg["node"]["topographic__elevation"][mg.core_nodes] += U * dt
@@ -37,7 +37,7 @@ def test_no_thresh():
     actual_slopes = mg.at_node["topographic__steepest_slope"][mg.core_nodes[1:-1]]
     actual_areas = mg.at_node["drainage_area"][mg.core_nodes[1:-1]]
 
-    predicted_slopes = (U / (K * (actual_areas ** m))) ** (1.0 / n)
+    predicted_slopes = (U / (K * (actual_areas**m))) ** (1.0 / n)
 
     assert_array_almost_equal(actual_slopes, predicted_slopes)
 
@@ -57,7 +57,7 @@ def test_with_thresh():
 
     fa = FlowAccumulator(mg)
     sp = Spst(mg, K_sp=K, threshold_sp=threshold)
-    for i in range(100):
+    for _ in range(100):
         fa.run_one_step()
         sp.run_one_step(dt)
         mg["node"]["topographic__elevation"][mg.core_nodes] += U * dt
@@ -65,8 +65,8 @@ def test_with_thresh():
     actual_slopes = mg.at_node["topographic__steepest_slope"][mg.core_nodes[1:-1]]
     actual_areas = mg.at_node["drainage_area"][mg.core_nodes[1:-1]]
 
-    predicted_slopes_upper = ((U + threshold) / (K * (actual_areas ** m))) ** (1.0 / n)
-    predicted_slopes_lower = ((U + 0.0) / (K * (actual_areas ** m))) ** (1.0 / n)
+    predicted_slopes_upper = ((U + threshold) / (K * (actual_areas**m))) ** (1.0 / n)
+    predicted_slopes_lower = ((U + 0.0) / (K * (actual_areas**m))) ** (1.0 / n)
 
     # assert actual and predicted slopes are in the correct range for the slopes.
     assert np.all(actual_slopes > predicted_slopes_lower)
